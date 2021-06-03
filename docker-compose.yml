@@ -5,5 +5,6 @@ services:
     volumes:
       - ./config.yml:/etc/XrayR/config.yml # 映射配置文件夹
       - ./dns.json:/etc/XrayR/dns.json 
+      - ./rulelist:/etc/XrayR/rulelist
     restart: always
     network_mode: host
