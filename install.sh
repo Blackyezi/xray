@@ -154,6 +154,8 @@ install_XrayR() {
     
     curl -o /usr/bin/XrayR -Ls https://raw.githubusercontent.com/amfiyong/xray/master/XrayR.sh
     chmod +x /usr/bin/XrayR
+    ln -s /usr/bin/XrayR /usr/bin/xrayr 
+    chmod +x /usr/bin/xrayr
     #curl -o /usr/bin/XrayR-tool -Ls https://raw.githubusercontent.com/amfiyong/XrayR/master/XrayR-tool
     #chmod +x /usr/bin/XrayR-tool
     echo -e ""
