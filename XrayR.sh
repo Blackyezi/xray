@@ -259,8 +259,6 @@ update_shell() {
         before_show_menu
     else
         chmod +x /usr/bin/XrayR
-        ln -s /usr/bin/XrayR /usr/bin/xrayr 
-        chmod +x /usr/bin/xrayr
         echo -e "${green}升级脚本成功，请重新运行脚本${plain}" && exit 0
     fi
 }
