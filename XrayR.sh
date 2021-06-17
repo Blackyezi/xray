@@ -273,11 +273,11 @@ update_shell() {
     wget -O /usr/bin/XrayR -N --no-check-certificate https://raw.githubusercontent.com/amfiyong/xray/master/XrayR.sh
     if [[ $? != 0 ]]; then
         echo ""
-        echo -e "${red}下载脚本失败，请检查本机能否连接 Github${plain}"
+        echo -e "${red}download failed，plaese check connet to  Github${plain}"
         before_show_menu
     else
         chmod +x /usr/bin/XrayR
-        echo -e "${green}升级脚本成功，请重新运行脚本${plain}" && exit 0
+        echo -e "${green}Update successful，restart script plaese${plain}" && exit 0
     fi
 }
 
@@ -307,7 +307,7 @@ check_uninstall() {
     check_status
     if [[ $? != 2 ]]; then
         echo ""
-        echo -e "${red}XrayR已安装，请不要重复安装${plain}"
+        echo -e "${red}XrayR installed，don't repeat install please${plain}"
         if [[ $# == 0 ]]; then
             before_show_menu
         fi
@@ -321,7 +321,7 @@ check_install() {
     check_status
     if [[ $? == 2 ]]; then
         echo ""
-        echo -e "${red}请先安装XrayR${plain}"
+        echo -e "${red}Plaese Install XrayR${plain}"
         if [[ $# == 0 ]]; then
             before_show_menu
         fi
@@ -335,15 +335,15 @@ show_status() {
     check_status
     case $? in
         0)
-            echo -e "XrayR状态: ${green}已运行${plain}"
+            echo -e "XrayR Status: ${green}Running${plain}"
             show_enable_status
             ;;
         1)
-            echo -e "XrayR状态: ${yellow}未运行${plain}"
+            echo -e "XrayR Status: ${yellow}Not Running${plain}"
             show_enable_status
             ;;
         2)
-            echo -e "XrayR状态: ${red}未安装${plain}"
+            echo -e "XrayR Status: ${red}Not Install${plain}"
     esac
 }
 
@@ -357,7 +357,7 @@ show_enable_status() {
 }
 
 show_XrayR_version() {
-    echo -n "XrayR 版本："
+    echo -n "XrayR Version："
     /usr/local/XrayR/XrayR -version
     echo ""
     if [[ $# == 0 ]]; then
@@ -366,46 +366,46 @@ show_XrayR_version() {
 }
 
 show_usage() {
-    echo "XrayR 管理脚本使用方法: "
+    echo "XrayR Script usage: "
     echo "------------------------------------------"
-    echo "XrayR              - 显示管理菜单 (功能更多)"
-    echo "XrayR start        - 启动 XrayR"
-    echo "XrayR stop         - 停止 XrayR"
-    echo "XrayR restart      - 重启 XrayR"
-    echo "XrayR status       - 查看 XrayR 状态"
-    echo "XrayR enable       - 设置 XrayR 开机自启"
-    echo "XrayR disable      - 取消 XrayR 开机自启"
-    echo "XrayR log          - 查看 XrayR 日志"
-    echo "XrayR update       - 更新 XrayR"
-    echo "XrayR update x.x.x - 更新 XrayR 指定版本"
-    echo "XrayR install      - 安装 XrayR"
-    echo "XrayR uninstall    - 卸载 XrayR"
-    echo "XrayR version      - 查看 XrayR 版本"
+    echo "XrayR              - Show menu"
+    echo "XrayR start        - Start     XrayR"
+    echo "XrayR stop         - Stop      XrayR"
+    echo "XrayR restart      - Restart   XrayR"
+    echo "XrayR status       - View      XrayR Status"
+    echo "XrayR enable       - Setting   XrayR self-start"
+    echo "XrayR disable      - Disable   XrayR self-start"
+    echo "XrayR log          - View      XrayR log"
+    echo "XrayR update       - Update    XrayR"
+    echo "XrayR update x.x.x - UPdate    XrayR specify version"
+    echo "XrayR install      - Install   XrayR"
+    echo "XrayR uninstall    - Uninstall XrayR"
+    echo "XrayR version      - Check     XrayR version"
     echo "------------------------------------------"
 }
 
 show_menu() {
     echo -e "
-  ${green}XrayR 后端管理脚本，${plain}${red}不适用于docker${plain}
+  ${green}XrayR Management script，${plain}${red}Not applicable docker${plain}
 --- https://github.com/amfiyong/XrayR ---
   ${green}0.${plain} Edit Config
 ————————————————
-  ${green}1.${plain} 安装 XrayR
-  ${green}2.${plain} 更新 XrayR
-  ${green}3.${plain} 卸载 XrayR
+  ${green}1.${plain} Install  XrayR
+  ${green}2.${plain} Update   XrayR
+  ${green}3.${plain} Unistall XrayR
 ————————————————
-  ${green}4.${plain} 启动 XrayR
-  ${green}5.${plain} 停止 XrayR
-  ${green}6.${plain} 重启 XrayR
-  ${green}7.${plain} 查看 XrayR 状态
-  ${green}8.${plain} 查看 XrayR 日志
+  ${green}4.${plain} Start    XrayR
+  ${green}5.${plain} Stop     XrayR
+  ${green}6.${plain} Restart  XrayR
+  ${green}7.${plain} View     XrayR status
+  ${green}8.${plain} View     XrayR log
 ————————————————
-  ${green}9.${plain} 设置 XrayR 开机自启
- ${green}10.${plain} 取消 XrayR 开机自启
+  ${green}9.${plain} Enable   XrayR self-start
+ ${green}10.${plain} Disable  XrayR self-start
 ————————————————
- ${green}11.${plain} 一键安装 bbr (最新内核)
- ${green}12.${plain} 查看 XrayR 版本 
- ${green}13.${plain} 升级维护脚本
+ ${green}11.${plain} Onekey install bbr (latest kernel)
+ ${green}12.${plain} Check    XrayR version 
+ ${green}13.${plain} Update script
  "
  #后续更新可加入上方字符串中
     show_status
