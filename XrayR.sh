@@ -120,7 +120,25 @@ update() {
 }
 
 config() {
-    cat /etc/XrayR/config.yml
+    echo " XrayR will restart when edit config"
+    vi /etc/XrayR/config.yml
+    sleep 2 
+    check_status
+    case $? in
+        0)
+            echo -e "XrayR stauts: ${green}Running${plain}"
+            ;;
+        1)
+            echo -e "you not running XrayR or restart failed, whether to view log ? [Y/n]" && echo
+            read -e -p "(default: y):" yn
+            [[ -z ${yn} ]] && yn="y"
+            if [[ ${yn} == [Yy] ]]; then
+               show_log
+            fi
+            ;;
+        2)
+            echo -e "XrayR status: ${red}not install${plain}"
+    esac                  
 }
 
 uninstall() {
@@ -370,7 +388,7 @@ show_menu() {
     echo -e "
   ${green}XrayR 后端管理脚本，${plain}${red}不适用于docker${plain}
 --- https://github.com/amfiyong/XrayR ---
-  ${green}0.${plain} 退出脚本
+  ${green}0.${plain} Edit Config
 ————————————————
   ${green}1.${plain} 安装 XrayR
   ${green}2.${plain} 更新 XrayR
@@ -394,7 +412,7 @@ show_menu() {
     echo && read -p "请输入选择 [0-13]: " num
 
     case "${num}" in
-        0) exit 0
+        0) config
         ;;
         1) check_uninstall && install
         ;;
