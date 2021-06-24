@@ -8,7 +8,7 @@ plain='\033[0m'
 version="v1.0.0"
 
 # check root
-[[ $EUID -ne 0 ]] && echo -e "${red}错误: ${plain} 必须使用root用户运行此脚本！\n" && exit 1
+[[ $EUID -ne 0 ]] && echo -e "${red}Error: ${plain} Use the script by root user！\n" && exit 1
 
 # check os
 if [[ -f /etc/redhat-release ]]; then
@@ -26,7 +26,7 @@ elif cat /proc/version | grep -Eqi "ubuntu"; then
 elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
     release="centos"
 else
-    echo -e "${red}未检测到系统版本，请联系脚本作者！${plain}\n" && exit 1
+    echo -e "${red}Error system version，please contact auth！${plain}\n" && exit 1
 fi
 
 os_version=""
@@ -41,21 +41,21 @@ fi
 
 if [[ x"${release}" == x"centos" ]]; then
     if [[ ${os_version} -le 6 ]]; then
-        echo -e "${red}请使用 CentOS 7 或更高版本的系统！${plain}\n" && exit 1
+        echo -e "${red}Please use CentOS 7 or higher version！${plain}\n" && exit 1
     fi
 elif [[ x"${release}" == x"ubuntu" ]]; then
     if [[ ${os_version} -lt 16 ]]; then
-        echo -e "${red}请使用 Ubuntu 16 或更高版本的系统！${plain}\n" && exit 1
+        echo -e "${red}Please Ubuntu 16 or higher version！${plain}\n" && exit 1
     fi
 elif [[ x"${release}" == x"debian" ]]; then
     if [[ ${os_version} -lt 8 ]]; then
-        echo -e "${red}请使用 Debian 8 或更高版本的系统！${plain}\n" && exit 1
+        echo -e "${red}Please Debian 8 or higher version！${plain}\n" && exit 1
     fi
 fi
 
 confirm() {
     if [[ $# > 1 ]]; then
-        echo && read -p "$1 [默认$2]: " temp
+        echo && read -p "$1 [default$2]: " temp
         if [[ x"${temp}" == x"" ]]; then
             temp=$2
         fi
@@ -70,7 +70,7 @@ confirm() {
 }
 
 confirm_restart() {
-    confirm "是否重启XrayR" "y"
+    confirm "Restart XrayR ?" "y"
     if [[ $? == 0 ]]; then
         restart
     else
@@ -79,7 +79,7 @@ confirm_restart() {
 }
 
 before_show_menu() {
-    echo && echo -n -e "${yellow}按回车返回主菜单: ${plain}" && read temp
+    echo && echo -n -e "${yellow}Press enter back to menu: ${plain}" && read temp
     show_menu
 }
 
@@ -96,7 +96,7 @@ install() {
 
 update() {
     if [[ $# == 0 ]]; then
-        echo && echo -n -e "输入指定版本(默认最新版): " && read version
+        echo && echo -n -e "Tpye Specify version(default latest): " && read version
     else
         version=$2
     fi
@@ -110,7 +110,7 @@ update() {
 #    fi
     bash <(curl -Ls https://raw.githubusercontent.com/amfiyong/xray/master/install.sh) $version
     if [[ $? == 0 ]]; then
-        echo -e "${green}更新完成，已自动重启 XrayR，请使用 XrayR log 查看运行日志${plain}"
+        echo -e "${green}Update success，restarted XrayR，please use XrayR log view log${plain}"
         exit
     fi
 
@@ -142,7 +142,7 @@ config() {
 }
 
 uninstall() {
-    confirm "确定要卸载 XrayR 吗?" "n"
+    confirm "Do you really uninstall XrayR ?" "n"
     if [[ $? != 0 ]]; then
         if [[ $# == 0 ]]; then
             show_menu
@@ -158,7 +158,7 @@ uninstall() {
     rm /usr/local/XrayR/ -rf
 
     echo ""
-    echo -e "卸载成功，如果你想删除此脚本，则退出脚本后运行 ${green}rm /usr/bin/XrayR -f${plain} 进行删除"
+    echo -e "Uninstall success，if you want delete script，please use ${green}rm /usr/bin/XrayR -f${plain} 进行删除"
     echo ""
 
     if [[ $# == 0 ]]; then
@@ -170,15 +170,15 @@ start() {
     check_status
     if [[ $? == 0 ]]; then
         echo ""
-        echo -e "${green}XrayR已运行，无需再次启动，如需重启请选择重启${plain}"
+        echo -e "${green}XrayR is running,choose restart when you want to restart${plain}"
     else
         systemctl start XrayR
         sleep 2
         check_status
         if [[ $? == 0 ]]; then
-            echo -e "${green}XrayR 启动成功，请使用 XrayR log 查看运行日志${plain}"
+            echo -e "${green}XrayR start success，please use XrayR log view log${plain}"
         else
-            echo -e "${red}XrayR可能启动失败，请稍后使用 XrayR log 查看日志信息${plain}"
+            echo -e "${red}XrayR start failed，please use XrayR log view log${plain}"
         fi
     fi
 
@@ -192,9 +192,9 @@ stop() {
     sleep 2
     check_status
     if [[ $? == 1 ]]; then
-        echo -e "${green}XrayR 停止成功${plain}"
+        echo -e "${green}XrayR stop success${plain}"
     else
-        echo -e "${red}XrayR停止失败，可能是因为停止时间超过了两秒，请稍后查看日志信息${plain}"
+        echo -e "${red}XrayR stop failed，please check log${plain}"
     fi
 
     if [[ $# == 0 ]]; then
@@ -207,9 +207,9 @@ restart() {
     sleep 2
     check_status
     if [[ $? == 0 ]]; then
-        echo -e "${green}XrayR 重启成功，请使用 XrayR log 查看运行日志${plain}"
+        echo -e "${green}XrayR restart success，please use XrayR log view log${plain}"
     else
-        echo -e "${red}XrayR可能启动失败，请稍后使用 XrayR log 查看日志信息${plain}"
+        echo -e "${red}XrayR restart failed，please use XrayR log view log${plain}"
     fi
     if [[ $# == 0 ]]; then
         before_show_menu
@@ -226,9 +226,9 @@ status() {
 enable() {
     systemctl enable XrayR
     if [[ $? == 0 ]]; then
-        echo -e "${green}XrayR 设置开机自启成功${plain}"
+        echo -e "${green}XrayR sets self-start${plain}"
     else
-        echo -e "${red}XrayR 设置开机自启失败${plain}"
+        echo -e "${red}XrayR sets self-start failed${plain}"
     fi
 
     if [[ $# == 0 ]]; then
@@ -239,9 +239,9 @@ enable() {
 disable() {
     systemctl disable XrayR
     if [[ $? == 0 ]]; then
-        echo -e "${green}XrayR 取消开机自启成功${plain}"
+        echo -e "${green}XrayR cancel self-start success${plain}"
     else
-        echo -e "${red}XrayR 取消开机自启失败${plain}"
+        echo -e "${red}XrayR cancel self-start failed${plain}"
     fi
 
     if [[ $# == 0 ]]; then
@@ -350,9 +350,9 @@ show_status() {
 show_enable_status() {
     check_enabled
     if [[ $? == 0 ]]; then
-        echo -e "是否开机自启: ${green}是${plain}"
+        echo -e "self-start: ${green}Yes${plain}"
     else
-        echo -e "是否开机自启: ${red}否${plain}"
+        echo -e "self-start: ${red}No${plain}"
     fi
 }
 
@@ -409,7 +409,7 @@ show_menu() {
  "
  #后续更新可加入上方字符串中
     show_status
-    echo && read -p "请输入选择 [0-13]: " num
+    echo && read -p "Please input choice [0-13]: " num
 
     case "${num}" in
         0) config
@@ -440,7 +440,7 @@ show_menu() {
         ;;
         13) update_shell
         ;;
-        *) echo -e "${red}请输入正确的数字 [0-12]${plain}"
+        *) echo -e "${red}Please input right number [0-12]${plain}"
         ;;
     esac
 }
