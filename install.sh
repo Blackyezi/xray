@@ -31,15 +31,15 @@ else
     echo -e "${red}The system version is not detected, please contact the script author${plain}\n" && exit 1
 fi
 
-arc=$(arch)
+arch=$(arch)
 
 if [[ $arch == "x86_64" || $arch == "x64" || $arch == "amd64" ]]; then
-   arch="64"
+  arch="64"
 elif [[ $arch == "aarch64" || $arch == "arm64" ]]; then
-   arch="arm64-v8a"
+  arch="arm64-v8a"
 else
-   arch="64"
-   echo -e "${red}Failed to detect the architecture, use the default architecture: ${arch}${plain}"
+  arch="64"
+  echo -e "${red}Failed to detect the architecture, use the default architecture: ${arch}${plain}"
 fi
 
 echo "架构: ${arch}"
