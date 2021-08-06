@@ -35,7 +35,7 @@ arc=$(arch)
 
 if [[ $arch == "x86_64" || $arch == "x64" || $arch == "amd64" ]]; then
    arch="64"
-elif [[ $arch == "aarch7=64" || $arch == "arm64" ]]; then
+elif [[ $arch == "aarch64" || $arch == "arm64" ]]; then
    arch="arm64-v8a"
 else
    arch="64"
