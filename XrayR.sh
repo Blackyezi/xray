@@ -1,14 +1,16 @@
 #!/bin/bash
 
+rm -rf $0
+
 red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[0;33m'
 plain='\033[0m'
 
-version="v1.0.0"
+cur_dir=$(pwd)
 
 # check root
-[[ $EUID -ne 0 ]] && echo -e "${red}Error: ${plain} Use the script by root user！\n" && exit 1
+[[ $EUID -ne 0 ]] && echo -e "${red}error：${plain} Must be run as root user\n" && exit 1
 
 # check os
 if [[ -f /etc/redhat-release ]]; then
@@ -26,7 +28,25 @@ elif cat /proc/version | grep -Eqi "ubuntu"; then
 elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
     release="centos"
 else
-    echo -e "${red}Error system version，please contact auth！${plain}\n" && exit 1
+    echo -e "${red}The system version is not detected, please contact the script author${plain}\n" && exit 1
+fi
+
+arch=$(arch)
+
+if [[ $arch == "x86_64" || $arch == "x64" || $arch == "amd64" ]]; then
+  arch="64"
+elif [[ $arch == "aarch64" || $arch == "arm64" ]]; then
+  arch="arm64-v8a"
+else
+  arch="64"
+  echo -e "${red}Failed to detect the architecture, use the default architecture: ${arch}${plain}"
+fi
+
+echo "架构: ${arch}"
+
+if [ "$(getconf WORD_BIT)" != '32' ] && [ "$(getconf LONG_BIT)" != '64' ] ; then
+    echo "This software does not support 32-bit system (x86), please use 64-bit system (x86_64), if the detection is wrong, please contact the author"
+    exit 2
 fi
 
 os_version=""
@@ -41,243 +61,24 @@ fi
 
 if [[ x"${release}" == x"centos" ]]; then
     if [[ ${os_version} -le 6 ]]; then
-        echo -e "${red}Please use CentOS 7 or higher version！${plain}\n" && exit 1
+        echo -e "${red}Please use CentOS 7 or higher${plain}\n" && exit 1
     fi
 elif [[ x"${release}" == x"ubuntu" ]]; then
     if [[ ${os_version} -lt 16 ]]; then
-        echo -e "${red}Please Ubuntu 16 or higher version！${plain}\n" && exit 1
+        echo -e "${red}Please use Ubuntu 16 or higher${plain}\n" && exit 1
     fi
 elif [[ x"${release}" == x"debian" ]]; then
     if [[ ${os_version} -lt 8 ]]; then
-        echo -e "${red}Please Debian 8 or higher version！${plain}\n" && exit 1
+        echo -e "${red}Please use Debian 8 or higher${plain}\n" && exit 1
     fi
 fi
 
-confirm() {
-    if [[ $# > 1 ]]; then
-        echo && read -p "$1 [default$2]: " temp
-        if [[ x"${temp}" == x"" ]]; then
-            temp=$2
-        fi
+install_base() {
+    if [[ x"${release}" == x"centos" ]]; then
+        yum install epel-release -y
+        yum install wget curl unzip tar crontabs socat -y
     else
-        read -p "$1 [y/n]: " temp
-    fi
-    if [[ x"${temp}" == x"y" || x"${temp}" == x"Y" ]]; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-confirm_restart() {
-    confirm "Restart XrayR ?" "y"
-    if [[ $? == 0 ]]; then
-        restart
-    else
-        show_menu
-    fi
-}
-
-before_show_menu() {
-    echo && echo -n -e "${yellow}Press enter back to menu: ${plain}" && read temp
-    show_menu
-}
-
-install() {
-    bash <(curl -Ls https://raw.githubusercontent.com/amfiyong/xray/master/install.sh)
-    if [[ $? == 0 ]]; then
-        if [[ $# == 0 ]]; then
-            start
-        else
-            start 0
-        fi
-    fi
-}
-
-update() {
-    if [[ $# == 0 ]]; then
-        echo && echo -n -e "Tpye Specify version(default latest): " && read version
-    else
-        version=$2
-    fi
-#    confirm "本功能会强制重装当前最新版，数据不会丢失，是否继续?" "n"
-#    if [[ $? != 0 ]]; then
-#        echo -e "${red}已取消${plain}"
-#        if [[ $1 != 0 ]]; then
-#            before_show_menu
-#        fi
-#        return 0
-#    fi
-    bash <(curl -Ls https://raw.githubusercontent.com/amfiyong/xray/master/install.sh) $version
-    if [[ $? == 0 ]]; then
-        echo -e "${green}Update success，restarted XrayR，please use XrayR log view log${plain}"
-        exit
-    fi
-
-    if [[ $# == 0 ]]; then
-        before_show_menu
-    fi
-}
-
-config() {
-    echo " XrayR will restart when edit config"
-    vi /etc/XrayR/config.yml
-    sleep 2 
-    check_status
-    case $? in
-        0)
-            echo -e "XrayR stauts: ${green}Running${plain}"
-            ;;
-        1)
-            echo -e "you not running XrayR or restart failed, whether to view log ? [Y/n]" && echo
-            read -e -p "(default: y):" yn
-            [[ -z ${yn} ]] && yn="y"
-            if [[ ${yn} == [Yy] ]]; then
-               show_log
-            fi
-            ;;
-        2)
-            echo -e "XrayR status: ${red}not install${plain}"
-    esac                  
-}
-
-uninstall() {
-    confirm "Do you really uninstall XrayR ?" "n"
-    if [[ $? != 0 ]]; then
-        if [[ $# == 0 ]]; then
-            show_menu
-        fi
-        return 0
-    fi
-    systemctl stop XrayR
-    systemctl disable XrayR
-    rm /etc/systemd/system/XrayR.service -f
-    systemctl daemon-reload
-    systemctl reset-failed
-    rm /etc/XrayR/ -rf
-    rm /usr/local/XrayR/ -rf
-
-    echo ""
-    echo -e "Uninstall success，if you want delete script，please use ${green}rm /usr/bin/XrayR -f${plain} 进行删除"
-    echo ""
-
-    if [[ $# == 0 ]]; then
-        before_show_menu
-    fi
-}
-
-start() {
-    check_status
-    if [[ $? == 0 ]]; then
-        echo ""
-        echo -e "${green}XrayR is running,choose restart when you want to restart${plain}"
-    else
-        systemctl start XrayR
-        sleep 2
-        check_status
-        if [[ $? == 0 ]]; then
-            echo -e "${green}XrayR start success，please use XrayR log view log${plain}"
-        else
-            echo -e "${red}XrayR start failed，please use XrayR log view log${plain}"
-        fi
-    fi
-
-    if [[ $# == 0 ]]; then
-        before_show_menu
-    fi
-}
-
-stop() {
-    systemctl stop XrayR
-    sleep 2
-    check_status
-    if [[ $? == 1 ]]; then
-        echo -e "${green}XrayR stop success${plain}"
-    else
-        echo -e "${red}XrayR stop failed，please check log${plain}"
-    fi
-
-    if [[ $# == 0 ]]; then
-        before_show_menu
-    fi
-}
-
-restart() {
-    systemctl restart XrayR
-    sleep 2
-    check_status
-    if [[ $? == 0 ]]; then
-        echo -e "${green}XrayR restart success，please use XrayR log view log${plain}"
-    else
-        echo -e "${red}XrayR restart failed，please use XrayR log view log${plain}"
-    fi
-    if [[ $# == 0 ]]; then
-        before_show_menu
-    fi
-}
-
-status() {
-    systemctl status XrayR --no-pager -l
-    if [[ $# == 0 ]]; then
-        before_show_menu
-    fi
-}
-
-enable() {
-    systemctl enable XrayR
-    if [[ $? == 0 ]]; then
-        echo -e "${green}XrayR sets self-start${plain}"
-    else
-        echo -e "${red}XrayR sets self-start failed${plain}"
-    fi
-
-    if [[ $# == 0 ]]; then
-        before_show_menu
-    fi
-}
-
-disable() {
-    systemctl disable XrayR
-    if [[ $? == 0 ]]; then
-        echo -e "${green}XrayR cancel self-start success${plain}"
-    else
-        echo -e "${red}XrayR cancel self-start failed${plain}"
-    fi
-
-    if [[ $# == 0 ]]; then
-        before_show_menu
-    fi
-}
-
-show_log() {
-    journalctl -u XrayR.service -e --no-pager -f
-    if [[ $# == 0 ]]; then
-        before_show_menu
-    fi
-}
-
-install_bbr() {
-    bash <(curl -L -s https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh)
-    #if [[ $? == 0 ]]; then
-    #    echo ""
-    #    echo -e "${green}安装 bbr 成功，请重启服务器${plain}"
-    #else
-    #    echo ""
-    #    echo -e "${red}下载 bbr 安装脚本失败，请检查本机能否连接 Github${plain}"
-    #fi
-
-    #before_show_menu
-}
-
-update_shell() {
-    wget -O /usr/bin/XrayR -N --no-check-certificate https://raw.githubusercontent.com/amfiyong/xray/master/XrayR.sh
-    if [[ $? != 0 ]]; then
-        echo ""
-        echo -e "${red}download failed，plaese check connet to  Github${plain}"
-        before_show_menu
-    else
-        chmod +x /usr/bin/XrayR
-        echo -e "${green}Update successful，restart script plaese${plain}" && exit 0
+        apt install wget curl unzip tar cron socat -y
     fi
 }
 
@@ -294,78 +95,83 @@ check_status() {
     fi
 }
 
-check_enabled() {
-    temp=$(systemctl is-enabled XrayR)
-    if [[ x"${temp}" == x"enabled" ]]; then
-        return 0
-    else
-        return 1;
-    fi
+install_acme() {
+    curl https://get.acme.sh | sh
 }
 
-check_uninstall() {
-    check_status
-    if [[ $? != 2 ]]; then
-        echo ""
-        echo -e "${red}XrayR installed，don't repeat install please${plain}"
-        if [[ $# == 0 ]]; then
-            before_show_menu
+install_XrayR() {
+    if [[ -e /usr/local/XrayR/ ]]; then
+        rm /usr/local/XrayR/ -rf
+    fi
+
+    mkdir /usr/local/XrayR/ -p
+	cd /usr/local/XrayR/
+
+    if  [ $# == 0 ] ;then
+        last_version=$(curl -Ls "https://api.github.com/repos/Blackyezi/XrayR/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        if [[ ! -n "$last_version" ]]; then
+            echo -e "${red}Failed to detect the XrayR version, it may be beyond the Github API limit, please try again later, or manually specify the XrayR version to install${plain}"
+            exit 1
         fi
-        return 1
-    else
-        return 0
-    fi
-}
-
-check_install() {
-    check_status
-    if [[ $? == 2 ]]; then
-        echo ""
-        echo -e "${red}Plaese Install XrayR${plain}"
-        if [[ $# == 0 ]]; then
-            before_show_menu
+        echo -e "The latest version of XrayR detected：${last_version}，Start installing"
+        wget -N --no-check-certificate -O /usr/local/XrayR/XrayR-linux.zip https://github.com/Blackyezi/XrayR/releases/download/${last_version}/XrayR-linux-${arch}.zip
+        if [[ $? -ne 0 ]]; then
+            echo -e "${red}Download XrayR failed，Please make sure your server can download Github files${plain}"
+            exit 1
         fi
-        return 1
     else
-        return 0
+        last_version=$1
+        url="https://github.com/Blackyezi/XrayR/releases/download/${last_version}/XrayR-linux-${arch64}.zip"
+        echo -e "Start to install XrayR v$1"
+        wget -N --no-check-certificate -O /usr/local/XrayR/XrayR-linux.zip ${url}
+        if [[ $? -ne 0 ]]; then
+            echo -e "${red}Download XrayR v$1 failed，Please make sure this version exists${plain}"
+            exit 1
+        fi
     fi
-}
 
-show_status() {
-    check_status
-    case $? in
-        0)
-            echo -e "XrayR Status: ${green}Running${plain}"
-            show_enable_status
-            ;;
-        1)
-            echo -e "XrayR Status: ${yellow}Not Running${plain}"
-            show_enable_status
-            ;;
-        2)
-            echo -e "XrayR Status: ${red}Not Install${plain}"
-    esac
-}
+    unzip XrayR-linux.zip
+    rm XrayR-linux.zip -f
+    chmod +x XrayR
+    mkdir /etc/XrayR/ -p
+    rm /etc/systemd/system/XrayR.service -f
+    file="https://github.com/Blackyezi/xray/raw/master/XrayR.service"
+    wget -N --no-check-certificate -O /etc/systemd/system/XrayR.service ${file}
+    #cp -f XrayR.service /etc/systemd/system/
+    systemctl daemon-reload
+    systemctl stop XrayR
+    systemctl enable XrayR
+    echo -e "${green}XrayR ${last_version}${plain} The installation is complete, and the boot has been set to start automatically"
+    cp geoip.dat /etc/XrayR/
+    cp geosite.dat /etc/XrayR/ 
 
-show_enable_status() {
-    check_enabled
-    if [[ $? == 0 ]]; then
-        echo -e "self-start: ${green}Yes${plain}"
+    if [[ ! -f /etc/XrayR/config.yml ]]; then
+        cp config.yml /etc/XrayR/
+        echo -e ""
+        echo -e "For a new installation, please refer to the tutorial first: https://github.com/Blackyezi/XrayR, configure the necessary content"
     else
-        echo -e "self-start: ${red}No${plain}"
+        systemctl start XrayR
+        sleep 2
+        check_status
+        echo -e ""
+        if [[ $? == 0 ]]; then
+            echo -e "${green}XrayR Restart Successful${plain}"
+        else
+            echo -e "${red}XrayR may fail to start. Please use XrayR log to check the log information later. If it fails to start, the configuration format may have been changed. Please go to wiki to check：https://github.com/Blackyezi/XrayR/wiki${plain}"
+        fi
     fi
-}
 
-show_XrayR_version() {
-    echo -n "XrayR Version："
-    /usr/local/XrayR/XrayR -version
-    echo ""
-    if [[ $# == 0 ]]; then
-        before_show_menu
+    if [[ ! -f /etc/XrayR/dns.json ]]; then
+        cp dns.json /etc/XrayR/
     fi
-}
-
-show_usage() {
+    
+    curl -o /usr/bin/XrayR -Ls https://raw.githubusercontent.com/Blackyezi/xray/master/XrayR.sh
+    chmod +x /usr/bin/XrayR
+    ln -s /usr/bin/XrayR /usr/bin/xrayr 
+    chmod +x /usr/bin/xrayr
+    #curl -o /usr/bin/XrayR-tool -Ls https://raw.githubusercontent.com/Blackyezi/XrayR/master/XrayR-tool
+    #chmod +x /usr/bin/XrayR-tool
+    echo -e ""
     echo "XrayR Script usage: "
     echo "------------------------------------------"
     echo "XrayR              - Show menu"
@@ -384,98 +190,7 @@ show_usage() {
     echo "------------------------------------------"
 }
 
-show_menu() {
-    echo -e "
-  ${green}XrayR Management script，${plain}${red}Not applicable docker${plain}
---- https://github.com/amfiyong/XrayR ---
-  ${green}0.${plain} Edit Config
-————————————————
-  ${green}1.${plain} Install  XrayR
-  ${green}2.${plain} Update   XrayR
-  ${green}3.${plain} Unistall XrayR
-————————————————
-  ${green}4.${plain} Start    XrayR
-  ${green}5.${plain} Stop     XrayR
-  ${green}6.${plain} Restart  XrayR
-  ${green}7.${plain} View     XrayR status
-  ${green}8.${plain} View     XrayR log
-————————————————
-  ${green}9.${plain} Enable   XrayR self-start
- ${green}10.${plain} Disable  XrayR self-start
-————————————————
- ${green}11.${plain} Onekey install bbr (latest kernel)
- ${green}12.${plain} Check    XrayR version 
- ${green}13.${plain} Update script
- "
- #后续更新可加入上方字符串中
-    show_status
-    echo && read -p "Please input choice [0-13]: " num
-
-    case "${num}" in
-        0) config
-        ;;
-        1) check_uninstall && install
-        ;;
-        2) check_install && update
-        ;;
-        3) check_install && uninstall
-        ;;
-        4) check_install && start
-        ;;
-        5) check_install && stop
-        ;;
-        6) check_install && restart
-        ;;
-        7) check_install && status
-        ;;
-        8) check_install && show_log
-        ;;
-        9) check_install && enable
-        ;;
-        10) check_install && disable
-        ;;
-        11) install_bbr
-        ;;
-        12) check_install && show_XrayR_version
-        ;;
-        13) update_shell
-        ;;
-        *) echo -e "${red}Please input right number [0-12]${plain}"
-        ;;
-    esac
-}
-
-
-if [[ $# > 0 ]]; then
-    case $1 in
-        "start") check_install 0 && start 0
-        ;;
-        "stop") check_install 0 && stop 0
-        ;;
-        "restart") check_install 0 && restart 0
-        ;;
-        "status") check_install 0 && status 0
-        ;;
-        "enable") check_install 0 && enable 0
-        ;;
-        "disable") check_install 0 && disable 0
-        ;;
-        "log") check_install 0 && show_log 0
-        ;;
-        "update") check_install 0 && update 0 $2
-        ;;
-        "config") config $*
-        ;;
-        "install") check_uninstall 0 && install 0
-        ;;
-        "uninstall") check_install 0 && uninstall 0
-        ;;
-        "version") check_install 0 && show_XrayR_version 0
-        ;;
-        "update_shell") update_shell
-        ;;
-        *) show_usage
-    esac
-else
-    show_menu
-fi
+echo -e "${green}Start to install${plain}"
+install_base
+install_acme
+install_XrayR $1

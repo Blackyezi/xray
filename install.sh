@@ -108,20 +108,20 @@ install_XrayR() {
 	cd /usr/local/XrayR/
 
     if  [ $# == 0 ] ;then
-        last_version=$(curl -Ls "https://api.github.com/repos/amfiyong/XrayR/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        last_version=$(curl -Ls "https://api.github.com/repos/Blackyezi/XrayR/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
         if [[ ! -n "$last_version" ]]; then
             echo -e "${red}Failed to detect the XrayR version, it may be beyond the Github API limit, please try again later, or manually specify the XrayR version to install${plain}"
             exit 1
         fi
         echo -e "The latest version of XrayR detected：${last_version}，Start installing"
-        wget -N --no-check-certificate -O /usr/local/XrayR/XrayR-linux.zip https://github.com/amfiyong/XrayR/releases/download/${last_version}/XrayR-linux-${arch}.zip
+        wget -N --no-check-certificate -O /usr/local/XrayR/XrayR-linux.zip https://github.com/Blackyezi/XrayR/releases/download/${last_version}/XrayR-linux-${arch}.zip
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Download XrayR failed，Please make sure your server can download Github files${plain}"
             exit 1
         fi
     else
         last_version=$1
-        url="https://github.com/amfiyong/XrayR/releases/download/${last_version}/XrayR-linux-${arch64}.zip"
+        url="https://github.com/Blackyezi/XrayR/releases/download/${last_version}/XrayR-linux-${arch64}.zip"
         echo -e "Start to install XrayR v$1"
         wget -N --no-check-certificate -O /usr/local/XrayR/XrayR-linux.zip ${url}
         if [[ $? -ne 0 ]]; then
@@ -135,7 +135,7 @@ install_XrayR() {
     chmod +x XrayR
     mkdir /etc/XrayR/ -p
     rm /etc/systemd/system/XrayR.service -f
-    file="https://github.com/amfiyong/xray/raw/master/XrayR.service"
+    file="https://github.com/Blackyezi/xray/raw/master/XrayR.service"
     wget -N --no-check-certificate -O /etc/systemd/system/XrayR.service ${file}
     #cp -f XrayR.service /etc/systemd/system/
     systemctl daemon-reload
@@ -143,12 +143,12 @@ install_XrayR() {
     systemctl enable XrayR
     echo -e "${green}XrayR ${last_version}${plain} The installation is complete, and the boot has been set to start automatically"
     cp geoip.dat /etc/XrayR/
-    cp geosite.dat /etc/XrayR/ 
+    cp geosite.dat /etc/XrayR/
 
     if [[ ! -f /etc/XrayR/config.yml ]]; then
         cp config.yml /etc/XrayR/
         echo -e ""
-        echo -e "For a new installation, please refer to the tutorial first: https://github.com/amfiyong/XrayR, configure the necessary content"
+        echo -e "For a new installation, please refer to the tutorial first: https://github.com/Blackyezi/XrayR, configure the necessary content"
     else
         systemctl start XrayR
         sleep 2
@@ -157,19 +157,19 @@ install_XrayR() {
         if [[ $? == 0 ]]; then
             echo -e "${green}XrayR Restart Successful${plain}"
         else
-            echo -e "${red}XrayR may fail to start. Please use XrayR log to check the log information later. If it fails to start, the configuration format may have been changed. Please go to wiki to check：https://github.com/amfiyong/XrayR/wiki${plain}"
+            echo -e "${red}XrayR may fail to start. Please use XrayR log to check the log information later. If it fails to start, the configuration format may have been changed. Please go to wiki to check：https://github.com/Blackyezi/XrayR/wiki${plain}"
         fi
     fi
 
     if [[ ! -f /etc/XrayR/dns.json ]]; then
         cp dns.json /etc/XrayR/
     fi
-    
-    curl -o /usr/bin/XrayR -Ls https://raw.githubusercontent.com/amfiyong/xray/master/XrayR.sh
+
+    curl -o /usr/bin/XrayR -Ls https://raw.githubusercontent.com/Blackyezi/xray/master/XrayR.sh
     chmod +x /usr/bin/XrayR
     ln -s /usr/bin/XrayR /usr/bin/xrayr 
     chmod +x /usr/bin/xrayr
-    #curl -o /usr/bin/XrayR-tool -Ls https://raw.githubusercontent.com/amfiyong/XrayR/master/XrayR-tool
+    #curl -o /usr/bin/XrayR-tool -Ls https://raw.githubusercontent.com/Blackyezi/XrayR/master/XrayR-tool
     #chmod +x /usr/bin/XrayR-tool
     echo -e ""
     echo "XrayR Script usage: "
